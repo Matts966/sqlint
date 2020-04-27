@@ -3,10 +3,8 @@
     description: Linter for BigQuery Standard SQL.
     entry: find . -name *.sql -exec sqlint {} \;
     language: python
-    types: [python]
 -   id: sqlint-format
     name: sqlint format
     description: Formatter for BigQuery Standard SQL.
     entry: find . -name *.sql -exec sqlint -fr {} \;
     language: python
-    types: [python]
