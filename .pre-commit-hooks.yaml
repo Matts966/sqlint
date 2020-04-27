@@ -1,0 +1,12 @@
+-   id: sqlint
+    name: sqlint
+    description: Linter for BigQuery Standard SQL.
+    entry: sqlint
+    language: python
+    types: [python]
+-   id: sqlint-format
+    name: sqlint format
+    description: Formatter for BigQuery Standard SQL.
+    entry: sqlint -f
+    language: python
+    types: [python]
