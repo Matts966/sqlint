@@ -1,6 +1,7 @@
 import click
 import logging
 import os
+import sys
 from typing import Dict
 
 from .checker import check as check_tree
@@ -17,8 +18,9 @@ logger = logging.getLogger(__name__)
 @click.option('--config', '-c', 'config_file',
               type=click.Path(),
               help='Path to the config file that will be the authoritative config source.')
-@click.option('--format', '-f', 'is_format', is_flag=True, help='Prints formatted sql and exist')
-def main(files, config_file, is_format):
+@click.option('--format', '-f', 'is_format', is_flag=True, help='Prints formatted sql and exit')
+@click.option('--format-replace', '-fr', 'is_format_replace', is_flag=True, help='Reqlace file by formatted sql and exit')
+def main(files, config_file, is_format, is_format_replace):
     """
 
     Args:
@@ -35,7 +37,6 @@ def main(files, config_file, is_format):
         return
 
     config = Config(config_file)
-    trees: Dict[str, SyntaxTree] = {}
     # constructs syntax tree in each files
     for f in files:
         if not os.path.exists(f):
@@ -46,22 +47,34 @@ def main(files, config_file, is_format):
             logger.warning(f'{f} is a directory')
             continue
 
+        tree: SyntaxTree
+        file_contents: str
         with open(f, 'r') as fp:
-            if is_format:
+            file_contents = fp.read()
+            if is_format or is_format_replace:
                 # constructs syntax tree
-                trees[f] = SyntaxTree.sqlptree(fp.read(), is_abstract=True)
+                tree = SyntaxTree.sqlptree(file_contents, is_abstract=True)
             else:
-                trees[f] = SyntaxTree.sqlptree(fp.read())
+                tree = SyntaxTree.sqlptree(file_contents)
 
-    for file, tree in trees.items():
         if is_format:
             formatted_tree = format_tree(tree, config)
             logger.info(formatted_tree.sqlftree())
+        elif is_format_replace:
+            formatted_tree = format_tree(tree, config)
+            formattec_contents = formatted_tree.sqlftree()
+            if file_contents == formattec_contents:
+                sys.exit(0)
+            with open(f, 'w') as fp:
+                fp.write(formattec_contents)
+                sys.exit(1)
         else:
             tree.sqlftree()
+            rc = 0
             for v in sorted(check_tree(tree, config)):
-                logger.info('{} {}'.format(file, v))
-
+                rc = 1
+                logger.info('{} {}'.format(f, v))
+            sys.exit(rc)
 
 if __name__ == '__main__':
     main()
